@@ -36,19 +36,19 @@ setScreenMetrics(1080, 2400);
 /**
  * 根据实际设备分辨率自适应计算坐标
  */
-function sx(ratio) { return Math.round(device.width  * ratio); }
+function sx(ratio) { return Math.round(device.width * ratio); }
 function sy(ratio) { return Math.round(device.height * ratio); }
 
 // ==================== 配置 ====================
 const CONFIG = {
-    keyword:       "好物推荐",
-    commentsPool:  [
+    keyword: "好物推荐",
+    commentsPool: [
         // 在这里填入候选评论文案
-        "不错"
+        "不错", "非常好", "下次一定", "已收藏"
     ],
-    maxLoops:      3,
-    skipRate:      0,   // 跳过评论概率(%)
-    likeRate:      5,    // 随机点赞概率(%)
+    maxLoops: 40,
+    skipRate: 50,   // 跳过评论概率(%)
+    likeRate: 50,    // 随机点赞概率(%)
 };
 
 // ==================== 日志浮窗 ====================
@@ -75,14 +75,14 @@ function dumpPageInfo(label) {
             try {
                 var e = all[di];
                 var txt = (e.text() || "");
-                var ds  = (e.desc() || "");
+                var ds = (e.desc() || "");
                 var cls = (e.className() || "").replace("android.widget.", "");
-                var b   = e.bounds();
+                var b = e.bounds();
                 var pos = "(" + Math.round(b.centerX()) + "," + Math.round(b.centerY()) + ")";
                 if (txt.length > 40) txt = txt.substring(0, 40) + "...";
-                if (ds.length > 40)  ds  = ds.substring(0, 40)  + "...";
+                if (ds.length > 40) ds = ds.substring(0, 40) + "...";
                 log(util.format("  [%s] text=\"%s\" desc=\"%s\" pos=%s", cls, txt, ds, pos));
-            } catch (e2) {}
+            } catch (e2) { }
         }
     } catch (e3) {
         tlog("dumpPage 异常: " + e3);
@@ -214,10 +214,11 @@ function isPageLoaded(txt, timeout) {
  * 适配全面屏手势导航的 Android 设备。
  */
 function safeBack() {
-    shell("input keyevent 4", false);
+    back()
+    // shell("input keyevent 4", false);
     sleep(400);
     swipe(5, Math.round(device.height / 2),
-          Math.round(device.width * 0.25), Math.round(device.height / 2), 200);
+        Math.round(device.width * 0.25), Math.round(device.height / 2), 200);
     sleep(300);
 }
 
@@ -245,7 +246,7 @@ function smartClick(node) {
             var b2 = node.bounds();
             press(Math.round(b2.centerX()), Math.round(b2.centerY()), random(40, 80));
             return true;
-        } catch(e2) {
+        } catch (e2) {
             log("smartClick 失败: " + e2);
             return false;
         }
@@ -335,7 +336,7 @@ function performComment(commentsArray) {
 
 // ==================== 反检测状态管理 ====================
 
-var failCount    = 0;       // 连续失败计数器
+var failCount = 0;       // 连续失败计数器
 var restartCount = 0;       // 当前已重启次数
 var MAX_RESTARTS = 3;       // 最大允许重启次数
 
@@ -438,7 +439,7 @@ function findVideoTab() {
                 p = p.parent();
             }
         }
-    } catch(e){}
+    } catch (e) { }
     return null;
 }
 
@@ -453,13 +454,13 @@ function findFirstVideoCard() {
                 // 视频卡片通常在 Y: 0.36~0.54，且 X>0.05（避免负坐标幽灵元素）
                 // 同时过滤太窄的元素（可能是分割线/图标）
                 if (b.centerY() > sy(0.36) && b.centerY() < sy(0.54)
-                 && b.centerX() > sx(0.05) && b.width() > sx(0.1)) {
+                    && b.centerX() > sx(0.05) && b.width() > sx(0.1)) {
                     tlog("findFirstVideoCard: pos=(" + Math.round(b.centerX()) + "," + Math.round(b.centerY()) + ") size=" + b.width() + "x" + b.height());
                     return el;
                 }
-            } catch(e){}
+            } catch (e) { }
         }
-    } catch(e){ tlog("findFirstVideoCard 异常: " + e); }
+    } catch (e) { tlog("findFirstVideoCard 异常: " + e); }
     return null;
 }
 
@@ -502,6 +503,7 @@ function browseLoop() {
         // --- 反检测: 5% 概率随机点赞 ---
         if (random(1, 100) <= CONFIG.likeRate) {
             tlog("[anti-detect] 随机点赞");
+            sleepRandom(800, 1200);
             press(sx(0.92), sy(0.55), random(30, 80));
             tlog("点赞（坐标直点）");
         }
